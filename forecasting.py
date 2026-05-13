@@ -6,6 +6,7 @@ Includes: confidence intervals, ensemble, leaderboard, residual analysis,
           AI-powered ML interpretation.
 """
 import math
+import os
 import warnings
 import numpy as np
 import torch
@@ -354,9 +355,15 @@ def run_forecast(revenues: list, months: list, horizon: int = FORECAST_HORIZON) 
         return fitted, fut, met
 
     # ── Transformer ───────────────────────────────────
+    _TF_PKL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "transformer_model.pkl")
     tf_model = PyTorchTransformer()
-    tf_losses = _train_nn(X_tr, y_tr, tf_model)
-    tf_fitted, tf_future, tf_metrics = nn_pipeline(tf_model, tf_losses)
+    if os.path.exists(_TF_PKL):
+        tf_model.load_state_dict(torch.load(_TF_PKL, weights_only=True))
+        tf_losses = []
+    else:
+        tf_losses = _train_nn(X_tr, y_tr, tf_model)
+        torch.save(tf_model.state_dict(), _TF_PKL)
+    tf_fitted, tf_future, tf_metrics = nn_pipeline(tf_model, tf_losses) 
 
     # ── LSTM ──────────────────────────────────────────
     lstm_model = LSTMForecaster()
@@ -403,7 +410,7 @@ def run_forecast(revenues: list, months: list, horizon: int = FORECAST_HORIZON) 
         p = round(float(np.clip(np.dot(weights, window), clip_lo, clip_hi)), 2)
         ma_future.append(p); ma_seq.append(p)
     if has_test:
-        ma_preds = [X_tab_te[i].mean() for i in range(len(X_tab_te))]
+        ma_preds = [float(np.dot(weights, X_tab_te[i][-ma_w:])) for i in range(len(X_tab_te))]
         ma_metrics = _metrics(y_tab_te, np.array(ma_preds))
     else:
         ma_metrics = {"mae": None, "rmse": None, "mape": None, "r2": None}
