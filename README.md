@@ -1,4 +1,4 @@
-# Store Analytics Dashboard — GenAI
+# Store Analytics Dashboard - GenAI
 
 A Flask-based analytics dashboard for DVD rental store data, powered by multi-model ML forecasting and a generative AI chatbot.
 
