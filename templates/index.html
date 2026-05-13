@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Analytics Pro — DVD Rental Intelligence Platform</title>
+  <meta name="description" content="AI-powered DVD Rental Analytics: real-time KPIs, Transformer forecasting, chatbot insights">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/enhanced.css">
+</head>
+<body>
+
+  <!-- ═══ NAV BAR ═══ -->
+  <header class="nav-bar">
+    <div class="nav-bar-inner">
+      <div class="nav-brand-wrap">
+        <span class="nav-logo">🎬</span>
+        <div>
+          <div class="nav-brand">Store Analytics Pro</div>
+          <div class="nav-subtitle">DVD Rental Intelligence Platform · AI + Transformer Forecasting</div>
+        </div>
+      </div>
+      <div class="nav-right">
+        <div id="filter-info" class="filter-badge"></div>
+        <label class="theme-toggle" title="Toggle Light/Dark">
+          <input type="checkbox" id="theme-switch" onchange="toggleTheme()">
+          <span class="theme-slider">🌙</span>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ FILTER BAR ═══ -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>🏪 Store</label>
+      <select id="store-filter" onchange="refreshAll()">
+        <option value="All">All Stores</option>
+        <option value="1">Store 1</option>
+        <option value="2">Store 2</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>📅 Month</label>
+      <select id="month-filter" onchange="refreshAll()"></select>
+    </div>
+    <button class="btn-outline btn-sm" onclick="refreshAll()">↻ Refresh</button>
+  </div>
+
+  <!-- ═══ TABS ═══ -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview"    onclick="switchTab('overview')">📊 Overview</button>
+    <button class="tab"        data-tab="inventory"   onclick="switchTab('inventory')">📦 Inventory</button>
+    <button class="tab"        data-tab="customers"   onclick="switchTab('customers')">👥 Customers</button>
+    <button class="tab"        data-tab="patterns"    onclick="switchTab('patterns')">⏱️ Patterns</button>
+    <button class="tab"        data-tab="forecast"    onclick="switchTab('forecast')">🔮 Forecast</button>
+    <button class="tab"        data-tab="ai-insights" onclick="switchTab('ai-insights')">🧠 AI Insights</button>
+    <button class="tab"        data-tab="settings"    onclick="switchTab('settings')">⚙️ Settings</button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: OVERVIEW
+  ═══════════════════════════════════════════ -->
+  <div id="tab-overview" class="tab-panel active">
+    <div id="kpi-row" class="kpi-row"></div>
+
+    <div class="chart-grid-3">
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-store-rev">Store Revenue</div>
+        <div id="chart-store-rev"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-store-rent">Store Rentals</div>
+        <div id="chart-store-rent"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-trend-rev"><span id="trend-type-rev">Monthly</span> Revenue Trend</div>
+        <div id="chart-trend-rev"></div>
+      </div>
+    </div>
+
+    <div class="chart-grid-overview-bottom">
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-cust-dist">Customer Distribution</div>
+        <div id="chart-cust-seg"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-trend-rent"><span id="trend-type-rent">Monthly</span> Rentals Trend</div>
+        <div id="chart-trend-rent"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-top-cat">Top Categories by Revenue</div>
+        <div id="chart-top-cat"></div>
+      </div>
+    </div>
+
+    <div id="overview-insight" class="insight-box"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: INVENTORY
+  ═══════════════════════════════════════════ -->
+  <div id="tab-inventory" class="tab-panel">
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="section-hdr" id="hdr-rev-inv">Revenue per Inventory Unit (All Categories)</div>
+      <div id="chart-rev-inv"></div>
+    </div>
+    <div class="chart-grid-30-70">
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-cat-pie">Category Rental Share</div>
+        <div id="chart-cat-pie"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-film-util">Top 15 Films by Utilization Rate</div>
+        <div id="film-util-table" class="data-table-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: CUSTOMERS & GEO
+  ═══════════════════════════════════════════ -->
+  <div id="tab-customers" class="tab-panel">
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-geo-map">Global Revenue Distribution</div>
+        <div id="chart-geo-map"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-geo-bar">Top 10 Countries by Revenue</div>
+        <div id="chart-geo-bar"></div>
+      </div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-cust-val">Customer Value Segments</div>
+        <div id="chart-cust-val"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-cust-table">Top 15 Customers by Revenue</div>
+        <div id="cust-table" class="data-table-wrap"></div>
+      </div>
+    </div>
+    <div id="geo-insight" class="insight-box"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: PATTERNS
+  ═══════════════════════════════════════════ -->
+  <div id="tab-patterns" class="tab-panel">
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-hourly">Hourly Rental Activity</div>
+        <div id="chart-hourly"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-avg-dur">Avg Rental Duration by Day of Week (hours)</div>
+        <div id="chart-avg-dur"></div>
+      </div>
+    </div>
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-dow">Revenue by Day of Week</div>
+        <div id="chart-dow"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr" id="hdr-hourly-rev">Revenue by Hour</div>
+        <div id="chart-hourly-rev"></div>
+      </div>
+    </div>
+    <div id="pattern-insight" class="insight-box"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: TRANSFORMER FORECAST
+  ═══════════════════════════════════════════ -->
+  <div id="tab-forecast" class="tab-panel">
+    <!-- Status banner -->
+    <div id="forecast-status" class="forecast-status">
+      <span class="spinner"></span> Initialising forecast models...
+    </div>
+
+    <!-- Architecture description -->
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="section-hdr" id="hdr-forecast">🔮 Revenue Forecast — Multi-Model Comparison</div>
+      <p class="muted-text" style="margin:0 0 6px">
+        <strong>Transformer</strong>: Input Projection → Positional Encoding → Multi-Head Causal Self-Attention → Residual + LayerNorm → ReLU FFN → Residual + LayerNorm → Linear Output.
+        Trained with <strong>Adam optimiser</strong> (finite-difference gradients). Compared against <strong>Random Forest</strong>, <strong>Decision Tree</strong>, and <strong>Linear Regression</strong>.
+      </p>
+      <div id="arch-badge" class="arch-badge"></div>
+    </div>
+
+    <!-- Forecast horizon selector -->
+    <div class="forecast-horizon-bar">
+      <span class="fh-label">📅 Forecast Horizon:</span>
+      <button class="fh-btn" data-months="1" onclick="setForecastHorizon(1)">1 Month</button>
+      <button class="fh-btn" data-months="3" onclick="setForecastHorizon(3)">3 Months</button>
+      <button class="fh-btn active" data-months="6" onclick="setForecastHorizon(6)">6 Months</button>
+    </div>
+
+    <!-- Forecast chart -->
+    <div class="chart-card">
+      <div class="section-hdr" id="forecast-chart-title">Historical + Fitted + 3-Month Forecast</div>
+      <div id="chart-forecast"></div>
+      <div id="forecast-cards" class="kpi-row" style="margin-top:16px"></div>
+      <div id="forecast-detail" class="insight-box" style="margin-top:12px"></div>
+      <!-- AI ML Prediction Panel -->
+      <div id="ai-ml-prediction" class="insight-box" style="margin-top:14px;border-left:3px solid #A855F7;background:rgba(168,85,247,0.08);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:18px;">🤖</span>
+          <strong style="color:#C4B5FD;font-size:13px;">AI-Powered ML Prediction</strong>
+          <span id="ai-pred-spinner" style="display:none" class="spinner"></span>
+        </div>
+        <div id="ai-pred-content" style="color:#CBD5E1;font-size:12px;line-height:1.7;">
+          <em style="color:#94A3B8;">Run a forecast to get AI-powered ML interpretation...</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model comparison chart -->
+    <div class="chart-card" style="margin-top:14px">
+      <div class="section-hdr" id="hdr-forecast-models">📊 3-Month Forecast by Model</div>
+      <div id="chart-comparison"></div>
+      <div id="comparison-table" class="data-table-wrap" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Model Accuracy Leaderboard -->
+    <div class="chart-card" style="margin-top:14px">
+      <div class="section-hdr" id="hdr-leaderboard">🏆 Model Accuracy Leaderboard (Test Set Metrics)</div>
+      <p class="muted-text" style="font-size:.75rem;margin-bottom:10px">
+        Ranked by composite score (lower = better). MAE = Mean Absolute Error, RMSE = Root Mean Squared Error,
+        MAPE = Mean Absolute Percentage Error, R² = coefficient of determination (higher = better).
+        <strong style="color:#F59E0B">Note:</strong> With only 9 months of data, simpler models typically outperform Transformer/LSTM.
+        Transformer is included per academic requirement.
+      </p>
+      <div id="model-leaderboard" class="data-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: AI INSIGHTS CENTER
+  ═══════════════════════════════════════════ -->
+  <div id="tab-ai-insights" class="tab-panel">
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="section-hdr" id="hdr-ai-center">🧠 AI Intelligence Center</div>
+      <p class="muted-text">Click any card below to generate AI-powered analysis using real database data. The AI Agent uses tool calling to query the database, analyze patterns, and produce grounded insights.</p>
+    </div>
+
+    <div class="insight-cards-grid">
+      <div class="insight-action-card" onclick="generateInsight('executive_summary')">
+        <div class="insight-action-icon">📋</div>
+        <div class="insight-action-title">Executive Summary</div>
+        <div class="insight-action-desc">Full business overview with KPIs, trends, and strategic recommendations</div>
+      </div>
+      <div class="insight-action-card" onclick="generateInsight('anomaly_detection')">
+        <div class="insight-action-icon">🚨</div>
+        <div class="insight-action-title">Anomaly Detection</div>
+        <div class="insight-action-desc">Identify unusual patterns, outliers, and data irregularities</div>
+      </div>
+      <div class="insight-action-card" onclick="generateInsight('recommendation')">
+        <div class="insight-action-icon">💡</div>
+        <div class="insight-action-title">Smart Recommendations</div>
+        <div class="insight-action-desc">AI-generated action items to improve business performance</div>
+      </div>
+      <div class="insight-action-card" onclick="generateInsight('trend_analysis')">
+        <div class="insight-action-icon">📈</div>
+        <div class="insight-action-title">Trend Analysis</div>
+        <div class="insight-action-desc">Deep dive into revenue, rental, and customer trends</div>
+      </div>
+      <div class="insight-action-card" onclick="generateInsight('forecast_explanation')">
+        <div class="insight-action-icon">🔮</div>
+        <div class="insight-action-title">Forecast Explanation</div>
+        <div class="insight-action-desc">Plain-English interpretation of ML forecast results</div>
+      </div>
+      <div class="insight-action-card" onclick="generateInsight('segment_analysis')">
+        <div class="insight-action-icon">👥</div>
+        <div class="insight-action-title">Customer Segments</div>
+        <div class="insight-action-desc">Behavioral segmentation analysis with retention strategies</div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top:14px">
+      <div class="section-hdr">📊 AI Analysis Output</div>
+      <div id="ai-insight-output" class="insight-output">
+        <p class="muted-text" style="text-align:center;padding:60px 20px;font-size:.85rem">
+          🤖 Click an insight card above to generate AI-powered analysis<br>
+          <span style="font-size:.72rem;opacity:.7">Uses Groq LLM + real-time database queries</span>
+        </p>
+      </div>
+    </div>
+
+    <div id="ai-insight-tools" class="insight-box" style="margin-top:14px;display:none">
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TAB: SETTINGS / DATA SOURCE
+  ═══════════════════════════════════════════ -->
+  <div id="tab-settings" class="tab-panel">
+    <div class="settings-grid">
+      <div class="chart-card">
+        <div class="section-hdr">🔌 Database Connection</div>
+        <p class="muted-text">Connect to a different PostgreSQL instance.</p>
+        <div class="form-group"><label>Host</label><input type="text" id="db-host" placeholder="localhost"></div>
+        <div class="form-group"><label>Port</label><input type="text" id="db-port" placeholder="5432"></div>
+        <div class="form-group"><label>Database</label><input type="text" id="db-name" placeholder="dvdrental"></div>
+        <div class="form-group"><label>User</label><input type="text" id="db-user" placeholder="postgres"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="db-pass" placeholder="Enter password"></div>
+        <button class="btn-primary" onclick="saveDbConfig()" style="margin-top:12px">🔄 Connect & Reload</button>
+        <div id="db-status" class="db-status"></div>
+      </div>
+      <div class="chart-card">
+        <div class="section-hdr">🔍 Custom SQL Query</div>
+        <p class="muted-text">Run read-only SELECT queries. Max 500 rows returned.</p>
+        <textarea id="custom-sql" rows="6" placeholder="SELECT f.title, COUNT(r.rental_id) AS rentals&#10;FROM film f&#10;JOIN inventory i ON f.film_id = i.film_id&#10;JOIN rental r ON i.inventory_id = r.inventory_id&#10;GROUP BY f.title ORDER BY rentals DESC LIMIT 10"></textarea>
+        <button class="btn-primary" onclick="runCustomQuery()" style="margin-top:8px">▶ Execute Query</button>
+        <div id="query-result" class="data-table-wrap" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ AI-GENERATED CUSTOM CHARTS ═══ -->
+  <div id="custom-charts-panel" style="display:none;padding:0 16px 20px">
+    <div style="display:flex;align-items:center;gap:12px;margin:20px 0 12px">
+      <span style="font-size:.78rem;color:var(--muted,#94A3B8);font-weight:700;text-transform:uppercase;letter-spacing:.06em">🤖 AI-Generated Charts</span>
+      <button onclick="_clearAllCustomCharts()" style="background:none;border:1px solid #374151;color:#9CA3AF;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:.7rem">Clear All</button>
+    </div>
+    <div id="custom-charts-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px"></div>
+  </div>
+
+    <!-- ═══ RESTORE DELETED CHARTS BUTTON ═══ -->
+  <button id="restore-btn" onclick="restoreAllCharts()" title="Restore deleted charts">↩ Restore</button>
+
+  <!-- ═══ CHANGE BAR (Apply/Reject) — injected by JS ═══ -->
+
+  <!-- ═══ GLOBAL CHATBOT FAB ═══ -->
+  <button class="chat-fab" id="chat-fab" onclick="toggleChatbox()" title="💬 Ask AI for insights & recommendations">
+    <span class="fab-icon">💬</span>
+    <span class="fab-pulse"></span>
+  </button>
+
+  <div class="chatbox-overlay" id="chatbox-overlay">
+    <div class="chatbox-drag-bar" id="chatbox-drag-bar">
+      <div class="chatbox-drag-title">
+        🤖 AI Dashboard Controller
+        <span class="muted-text" style="font-weight:400;font-size:.66rem" id="ai-provider-badge">· checking provider...</span>
+      </div>
+      <button class="chatbox-drag-close" onclick="toggleChatbox()">✕</button>
+    </div>
+    <div class="chatbox-body">
+      <select id="ai-model" class="ai-model-select">
+        <option value="moonshot-v1-8k">Kimi moonshot-v1-8k (Recommended)</option>
+        <option value="moonshot-v1-32k">Kimi moonshot-v1-32k (Long context)</option>
+        <option value="moonshot-v1-128k">Kimi moonshot-v1-128k (Max context)</option>
+      </select>
+      <div class="quick-prompts">
+        <button onclick="aiQuick('go to Global Revenue Distribution chart')">🌍 → Global Map</button>
+        <button onclick="aiQuick('go to customers tab')">👥 → Customers</button>
+        <button onclick="aiQuick('go to forecast tab')">🔮 → Forecast</button>
+        <button onclick="aiQuick('go to patterns tab')">⏱ → Patterns</button>
+        <button onclick="aiQuick('move KPI to bottom')">⬇️ KPI Bottom</button>
+        <button onclick="aiQuick('move KPI to top')">⬆️ KPI Top</button>
+        <button onclick="aiQuick('store revenue pie chart')">🥧 Revenue Pie</button>
+        <button onclick="aiQuick('store revenue bar chart')">📊 Revenue Bar</button>
+        <button onclick="aiQuick('store revenue line chart')">📈 Revenue Line</button>
+        <button onclick="aiQuick('customer distribution pie chart')">🥧 Cust Pie</button>
+        <button onclick="aiQuick('delete store rentals chart')">🗑️ Del Rentals</button>
+        <button onclick="aiQuick('restore all charts')">↩ Restore All</button>
+        <button onclick="aiQuick('dark navy theme')">🌑 Dark Navy</button>
+        <button onclick="aiQuick('purple gold theme')">✨ Purple Gold</button>
+        <button onclick="aiQuick('ocean theme')">🌊 Ocean</button>
+        <button onclick="aiQuick('midnight theme')">🌙 Midnight</button>
+        <button onclick="aiQuick('accent green')">💚 Green</button>
+        <button onclick="aiQuick('accent orange')">🟠 Orange</button>
+        <button onclick="aiQuick('What is our total revenue and which store performs better?')">💰 Revenue</button>
+        <button onclick="aiQuick('Show loyal customers breakdown by country')">🌍 By Country</button>
+        <button onclick="aiQuick('Which film categories generate the most revenue?')">🎬 Categories</button>
+        <button onclick="aiQuick('What is our busiest hour and best day for rentals?')">⏰ Peak Hours</button>
+        <button onclick="aiQuick('reset dashboard to default')">♻️ Reset</button>
+      </div>
+      <div id="ai-chat" class="ai-chat"></div>
+      <div class="ai-input-row">
+        <input type="text" id="ai-input" placeholder="Chat, tanya data, atau minta ubah dashboard... (cth: 'ganti warna background jadi merah')"
+               onkeydown="if(event.key==='Enter')aiSend()">
+        <button onclick="aiSend()" class="btn-primary">Send</button>
+        <button onclick="aiClear()" class="btn-outline" title="Clear history">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restore persisted dashboard state before paint (prevents layout flash) -->
+  <script>
+    try {
+      const _s = JSON.parse(localStorage.getItem('sap_dashboard_state_v1') || '{}');
+      if (_s.cssVars) Object.entries(_s.cssVars).forEach(([k,v]) => document.documentElement.style.setProperty(k,v));
+      if (_s.bgGradient) document.addEventListener('DOMContentLoaded', () => { document.body.style.background = _s.bgGradient; });
+    } catch(e) {}
+  </script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Core
+flask
+flask-cors
+psycopg2-binary
+pandas
+numpy
+plotly
+python-dotenv
+python-dateutil
+
+# AI — OpenAI-compatible SDK (works with Kimi AND Groq)
+openai>=1.0.0
+
+# ML / Forecasting
+scikit-learn
+torch
+xgboost
+statsmodels
+scipy
